@@ -7,6 +7,7 @@ import styles from "./page.module.css"
 import { useAudio } from '@/components/AudioProvider'
 import ScoreScreen from './ScoreScreen.js'
 import GuessMap from './GuessMap.js'
+import { POSTGAME_STORAGE_KEY } from './postgameStorage.js'
 import { auth, db} from '@/components/firebase-config.js'
 import { doc, updateDoc, increment, getDoc } from 'firebase/firestore'
 
@@ -239,6 +240,8 @@ function useGameLogic(goalPoint) {
         setGuessInfo(formatDistanceText(distance, hasGuess))
         setSubmittedGoal(goalPoint)
         setSubmittedGuess(guessPosition || DEFAULT_POSITION)
+
+        return { goal: goalPoint, guess: guessPosition, score: calculatedScore, distance }
     }, [goalPoint, userGuess])
 
     const resetGuess = useCallback(() => {
@@ -290,7 +293,13 @@ export default function Gameplay() {
     const [showScoreScreen, setShowScoreScreen] = useState(false)
     const [currentRound, setCurrentRound] = useState(1)
     const [isMapExpanded, setIsMapExpanded] = useState(false)
+    const [roundHistory, setRoundHistory] = useState([])
     const panoramaRef = useRef(null)
+
+    // Persist played rounds so the post-game page can show every map
+    useEffect(() => {
+        sessionStorage.setItem(POSTGAME_STORAGE_KEY, JSON.stringify(roundHistory))
+    }, [roundHistory])
 
 
     const { isLoaded } = useJsApiLoader({
@@ -311,7 +320,8 @@ export default function Gameplay() {
     // No audio stop helper needed; no score-fill audio
 
     const handleSubmitGuess = useCallback(() => {
-        gameLogic.submitGuess()
+        const roundResult = gameLogic.submitGuess()
+        if (roundResult) setRoundHistory(prev => [...prev, roundResult])
         setCurrentRound(prev => prev + 1)
         setShowScoreScreen(true)
         // Restart and slightly delay score-fill sound to avoid race with UI updates
