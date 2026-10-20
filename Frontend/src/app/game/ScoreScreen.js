@@ -46,7 +46,7 @@ export default function ScoreScreen({
 
     const handleButtonClick = useCallback(() => {
         if (isGameComplete) {
-            router.push('/lobby')
+            router.push('/game/postgame')
         } else {
             onNextRound()
         }
@@ -141,7 +141,7 @@ export default function ScoreScreen({
                 />
                 <div id={styles["guessInfo"]}>{guessInfo}</div>
                 <button onClick={handleButtonClick}>
-                    {isGameComplete ? "Game over - return to lobby" : "Start next!"}
+                    {isGameComplete ? "Game over - see results" : "Start next!"}
                 </button>
             </div>
         </div>
