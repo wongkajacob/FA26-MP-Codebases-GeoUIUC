@@ -3,7 +3,7 @@
 // Route: /game/postgame
 // Shows the map of every round played in the last game, read from sessionStorage
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useJsApiLoader, GoogleMap, MarkerF, PolylineF } from "@react-google-maps/api"
 import styles from "./page.module.css"
@@ -71,6 +71,30 @@ function RoundMap({ round, isLoaded }) {
     )
 }
 
+// Street view of the correct location, created once and reused if the position changes
+function RoundStreetView({ position, isLoaded }) {
+    const containerRef = useRef(null)
+    const panoramaRef = useRef(null)
+
+    useEffect(() => {
+        if (!isLoaded || !containerRef.current) return
+
+        if (panoramaRef.current) {
+            panoramaRef.current.setPosition(position)
+            return
+        }
+        panoramaRef.current = new window.google.maps.StreetViewPanorama(containerRef.current, {
+            position,
+            addressControl: false,
+            panControl: false,
+            showRoadLabels: false,
+            fullscreenControl: false
+        })
+    }, [isLoaded, position])
+
+    return <div ref={containerRef} className={styles.streetView} />
+}
+
 export default function PostGame() {
     const [rounds, setRounds] = useState([])
 
@@ -102,6 +126,7 @@ export default function PostGame() {
                             <div className={styles.roundCard} key={index}>
                                 <h3>Round {index + 1}</h3>
                                 <RoundMap round={round} isLoaded={isLoaded} />
+                                <RoundStreetView position={round.goal} isLoaded={isLoaded} />
                                 <div className={styles.roundScore}>{round.score}pts</div>
                                 <div>
                                     {round.guess
